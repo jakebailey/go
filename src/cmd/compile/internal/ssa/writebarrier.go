@@ -752,7 +752,7 @@ func IsNewObject(v *Value, select1 []*Value) (mem *Value, ok bool) {
 	if call.Op != OpStaticCall {
 		return nil, false
 	}
-	if !isSameCall(call.Aux, "runtime.newobject") {
+	if !isSameCall(auxToCall(call.Aux), "runtime.newobject") {
 		return nil, false
 	}
 	if f.ABIDefault == f.ABI1 && len(c.intParamRegs) >= 1 {

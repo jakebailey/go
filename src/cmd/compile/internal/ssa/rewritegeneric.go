@@ -19733,8 +19733,8 @@ func rewriteValuegeneric_OpNilCheck(v *Value) bool {
 		v.copyOf(ptr)
 		return true
 	}
-	// match: (NilCheck ptr:(SelectN [0] call:(StaticLECall _ _)) _)
-	// cond: isSameCall(call.Aux, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")
+	// match: (NilCheck ptr:(SelectN [0] call:(StaticLECall {f} _ _)) _)
+	// cond: isSameCall(f, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")
 	// result: ptr
 	for {
 		ptr := v_0
@@ -19742,14 +19742,18 @@ func rewriteValuegeneric_OpNilCheck(v *Value) bool {
 			break
 		}
 		call := ptr.Args[0]
-		if call.Op != OpStaticLECall || len(call.Args) != 2 || !(isSameCall(call.Aux, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")) {
+		if call.Op != OpStaticLECall || len(call.Args) != 2 {
+			break
+		}
+		f := auxToCall(call.Aux)
+		if !(isSameCall(f, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")) {
 			break
 		}
 		v.copyOf(ptr)
 		return true
 	}
-	// match: (NilCheck ptr:(OffPtr (SelectN [0] call:(StaticLECall _ _))) _)
-	// cond: isSameCall(call.Aux, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")
+	// match: (NilCheck ptr:(OffPtr (SelectN [0] call:(StaticLECall {f} _ _))) _)
+	// cond: isSameCall(f, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")
 	// result: ptr
 	for {
 		ptr := v_0
@@ -19761,7 +19765,11 @@ func rewriteValuegeneric_OpNilCheck(v *Value) bool {
 			break
 		}
 		call := ptr_0.Args[0]
-		if call.Op != OpStaticLECall || len(call.Args) != 2 || !(isSameCall(call.Aux, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")) {
+		if call.Op != OpStaticLECall || len(call.Args) != 2 {
+			break
+		}
+		f := auxToCall(call.Aux)
+		if !(isSameCall(f, "runtime.newobject") && warnRule(fe.Debug_checknil(), v, "removed nil check")) {
 			break
 		}
 		v.copyOf(ptr)
@@ -29746,8 +29754,8 @@ func rewriteValuegeneric_OpStore(v *Value) bool {
 		v.AddArg3(dst, e, mem)
 		return true
 	}
-	// match: (Store (SelectN [0] call:(StaticLECall _ _)) x mem:(SelectN [1] call))
-	// cond: isConstZero(x) && isSameCall(call.Aux, "runtime.newobject")
+	// match: (Store (SelectN [0] call:(StaticLECall {f} _ _)) x mem:(SelectN [1] call))
+	// cond: isConstZero(x) && isSameCall(f, "runtime.newobject")
 	// result: mem
 	for {
 		if v_0.Op != OpSelectN || auxIntToInt64(v_0.AuxInt) != 0 {
@@ -29757,16 +29765,17 @@ func rewriteValuegeneric_OpStore(v *Value) bool {
 		if call.Op != OpStaticLECall || len(call.Args) != 2 {
 			break
 		}
+		f := auxToCall(call.Aux)
 		x := v_1
 		mem := v_2
-		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isConstZero(x) && isSameCall(call.Aux, "runtime.newobject")) {
+		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isConstZero(x) && isSameCall(f, "runtime.newobject")) {
 			break
 		}
 		v.copyOf(mem)
 		return true
 	}
-	// match: (Store (OffPtr (SelectN [0] call:(StaticLECall _ _))) x mem:(SelectN [1] call))
-	// cond: isConstZero(x) && isSameCall(call.Aux, "runtime.newobject")
+	// match: (Store (OffPtr (SelectN [0] call:(StaticLECall {f} _ _))) x mem:(SelectN [1] call))
+	// cond: isConstZero(x) && isSameCall(f, "runtime.newobject")
 	// result: mem
 	for {
 		if v_0.Op != OpOffPtr {
@@ -29780,9 +29789,10 @@ func rewriteValuegeneric_OpStore(v *Value) bool {
 		if call.Op != OpStaticLECall || len(call.Args) != 2 {
 			break
 		}
+		f := auxToCall(call.Aux)
 		x := v_1
 		mem := v_2
-		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isConstZero(x) && isSameCall(call.Aux, "runtime.newobject")) {
+		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isConstZero(x) && isSameCall(f, "runtime.newobject")) {
 			break
 		}
 		v.copyOf(mem)
@@ -34125,8 +34135,8 @@ func rewriteValuegeneric_OpZero(v *Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
 	b := v.Block
-	// match: (Zero (SelectN [0] call:(StaticLECall _ _)) mem:(SelectN [1] call))
-	// cond: isSameCall(call.Aux, "runtime.newobject")
+	// match: (Zero (SelectN [0] call:(StaticLECall {f} _ _)) mem:(SelectN [1] call))
+	// cond: isSameCall(f, "runtime.newobject")
 	// result: mem
 	for {
 		if v_0.Op != OpSelectN || auxIntToInt64(v_0.AuxInt) != 0 {
@@ -34136,8 +34146,9 @@ func rewriteValuegeneric_OpZero(v *Value) bool {
 		if call.Op != OpStaticLECall || len(call.Args) != 2 {
 			break
 		}
+		f := auxToCall(call.Aux)
 		mem := v_1
-		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isSameCall(call.Aux, "runtime.newobject")) {
+		if mem.Op != OpSelectN || auxIntToInt64(mem.AuxInt) != 1 || call != mem.Args[0] || !(isSameCall(f, "runtime.newobject")) {
 			break
 		}
 		v.copyOf(mem)

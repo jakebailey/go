@@ -420,8 +420,8 @@ func canMergeLoad(target, load *Value) bool {
 }
 
 // isSameCall reports whether sym is the same as the given named symbol.
-func isSameCall(sym interface{}, name string) bool {
-	fn := sym.(*AuxCall).Fn
+func isSameCall(sym *AuxCall, name string) bool {
+	fn := sym.Fn
 	return fn != nil && fn.String() == name
 }
 
