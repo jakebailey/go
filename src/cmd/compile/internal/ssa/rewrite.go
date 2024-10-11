@@ -6,6 +6,7 @@ package ssa
 
 import (
 	"cmd/compile/internal/base"
+	"cmd/compile/internal/ir"
 	"cmd/compile/internal/logopt"
 	"cmd/compile/internal/reflectdata"
 	"cmd/compile/internal/types"
@@ -423,6 +424,17 @@ func canMergeLoad(target, load *Value) bool {
 func isSameCall(sym *AuxCall, name string) bool {
 	fn := sym.Fn
 	return fn != nil && fn.String() == name
+}
+
+func isReflectTypeForCall(sym *AuxCall) bool {
+	fn := sym.Fn
+	return fn != nil && strings.HasPrefix(fn.String(), "reflect.TypeFor[")
+}
+
+func reflectTypeItabForRtype(f *Func) Sym {
+	sym := ir.Pkgs.Itab.Lookup("*reflect.rtype,reflect.Type").Linksym()
+	reflectdata.MarkTypeSymUsedInInterface(sym, f.fe.Func().Linksym())
+	return sym
 }
 
 // canLoadUnaligned reports if the architecture supports unaligned load operations.

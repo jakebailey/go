@@ -2753,3 +2753,13 @@
 // If we don't use the result of cmpstring, might as well not call it.
 // Note that this could pretty easily generalize to any pure function.
 (SelectN [1] c:(StaticLECall {f} _ _ mem)) && c.Uses == 1 && isSameCall(f, "runtime.cmpstring") && clobber(c) => mem
+
+// Directly make reflect.Type values on calls to reflect.TypeFor out of the dictionary argument.
+(StaticLECall <t> {f} (Addr {s} sb) mem)
+  && isReflectTypeForCall(f)
+  && isFixedSym(s, 0)
+=> (MakeResult (IMake <t.FieldType(0)> (Addr <typ.Uintptr> {reflectTypeItabForRtype(b.Func)} sb) (Addr <typ.BytePtr> {fixedSym(b.Func, s, 0)} sb)) mem)
+
+(StaticLECall <t> {f} dict mem)
+  && isReflectTypeForCall(f)
+=> (MakeResult (IMake <t.FieldType(0)> (Addr <typ.Uintptr> {reflectTypeItabForRtype(b.Func)} (SB)) (Load <typ.BytePtr> (OffPtr <typ.BytePtr> [0] dict) mem)) mem)

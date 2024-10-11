@@ -29416,6 +29416,66 @@ func rewriteValuegeneric_OpStaticLECall(v *Value) bool {
 		v.AddArg2(v0, mem)
 		return true
 	}
+	// match: (StaticLECall <t> {f} (Addr {s} sb) mem)
+	// cond: isReflectTypeForCall(f) && isFixedSym(s, 0)
+	// result: (MakeResult (IMake <t.FieldType(0)> (Addr <typ.Uintptr> {reflectTypeItabForRtype(b.Func)} sb) (Addr <typ.BytePtr> {fixedSym(b.Func, s, 0)} sb)) mem)
+	for {
+		if len(v.Args) != 2 {
+			break
+		}
+		t := v.Type
+		f := auxToCall(v.Aux)
+		mem := v.Args[1]
+		v_0 := v.Args[0]
+		if v_0.Op != OpAddr {
+			break
+		}
+		s := auxToSym(v_0.Aux)
+		sb := v_0.Args[0]
+		if !(isReflectTypeForCall(f) && isFixedSym(s, 0)) {
+			break
+		}
+		v.reset(OpMakeResult)
+		v0 := b.NewValue0(v.Pos, OpIMake, t.FieldType(0))
+		v1 := b.NewValue0(v.Pos, OpAddr, typ.Uintptr)
+		v1.Aux = symToAux(reflectTypeItabForRtype(b.Func))
+		v1.AddArg(sb)
+		v2 := b.NewValue0(v.Pos, OpAddr, typ.BytePtr)
+		v2.Aux = symToAux(fixedSym(b.Func, s, 0))
+		v2.AddArg(sb)
+		v0.AddArg2(v1, v2)
+		v.AddArg2(v0, mem)
+		return true
+	}
+	// match: (StaticLECall <t> {f} dict mem)
+	// cond: isReflectTypeForCall(f)
+	// result: (MakeResult (IMake <t.FieldType(0)> (Addr <typ.Uintptr> {reflectTypeItabForRtype(b.Func)} (SB)) (Load <typ.BytePtr> (OffPtr <typ.BytePtr> [0] dict) mem)) mem)
+	for {
+		if len(v.Args) != 2 {
+			break
+		}
+		t := v.Type
+		f := auxToCall(v.Aux)
+		mem := v.Args[1]
+		dict := v.Args[0]
+		if !(isReflectTypeForCall(f)) {
+			break
+		}
+		v.reset(OpMakeResult)
+		v0 := b.NewValue0(v.Pos, OpIMake, t.FieldType(0))
+		v1 := b.NewValue0(v.Pos, OpAddr, typ.Uintptr)
+		v1.Aux = symToAux(reflectTypeItabForRtype(b.Func))
+		v2 := b.NewValue0(v.Pos, OpSB, typ.Uintptr)
+		v1.AddArg(v2)
+		v3 := b.NewValue0(v.Pos, OpLoad, typ.BytePtr)
+		v4 := b.NewValue0(v.Pos, OpOffPtr, typ.BytePtr)
+		v4.AuxInt = int64ToAuxInt(0)
+		v4.AddArg(dict)
+		v3.AddArg2(v4, mem)
+		v0.AddArg2(v1, v3)
+		v.AddArg2(v0, mem)
+		return true
+	}
 	return false
 }
 func rewriteValuegeneric_OpStore(v *Value) bool {
